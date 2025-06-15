@@ -57,7 +57,7 @@ jobs:
       - name: Terraform fmt
         id: fmt
         working-directory: ${{ inputs.working-directory }}
-        run: terraform fmt -check -recursive
+        run: terraform fmt -check
       
       - name: Terraform Init
         id: init
