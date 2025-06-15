@@ -13,6 +13,10 @@ on:
       environment:
         required: true
         type: string
+      working-directory:
+        required: false
+        type: string
+        default: infra
       lint-config-file:
         required: false
         type: string
@@ -56,7 +60,7 @@ jobs:
       
       - name: Terraform Init
         id: init
-        working-directory: infra
+        working-directory: ${{ inputs.working-directory }}
         run: terraform init -backend-config=conf/${{ inputs.environment }}.conf
 
       - name: Terraform Validate
@@ -88,7 +92,7 @@ jobs:
 
       - name: Terraform Plan
         id: plan
-        working-directory: infra
+        working-directory: ${{ inputs.working-directory }}
         run: terraform plan -no-color -var-file env/${{ inputs.environment }}.tfvars
       
       - uses: actions/github-script@v7
