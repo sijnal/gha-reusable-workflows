@@ -56,7 +56,8 @@ jobs:
       
       - name: Terraform fmt
         id: fmt
-        run: terraform fmt -check
+        working-directory: ${{ inputs.working-directory }}
+        run: terraform fmt -check -recursive
       
       - name: Terraform Init
         id: init
@@ -65,6 +66,7 @@ jobs:
 
       - name: Terraform Validate
         id: validate
+        working-directory: ${{ inputs.working-directory }}
         run: terraform validate -no-color
 
       - uses: terraform-linters/setup-tflint@v4
@@ -74,10 +76,12 @@ jobs:
   
       - name: init tflint
         shell: bash
+        working-directory: ${{ inputs.working-directory }}
         run: tflint --init
   
       - name: run tflint
         shell: bash
+        working-directory: ${{ inputs.working-directory }}
         run: tflint --config=${{ inputs.lint-config-file }}
 
       - name: Checkov GitHub Action
