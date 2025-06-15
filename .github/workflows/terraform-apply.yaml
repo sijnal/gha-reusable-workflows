@@ -14,6 +14,10 @@ on:
         required: true
         type: string
         default: dev
+      working-directory:
+        required: false
+        type: string
+        default: infra
       terraform-version:
         required: false
         type: string
@@ -43,21 +47,21 @@ jobs:
       
       - name: Terraform fmt
         id: fmt
-        working-directory: infra
+        working-directory: ${{ inputs.working-directory }}
         run: terraform fmt -check
         continue-on-error: true
       
       - name: Terraform Init
         id: init
-        working-directory: infra
+        working-directory: ${{ inputs.working-directory }}
         run: terraform init -backend-config=conf/${{ inputs.environment }}.conf
       
       - name: Terraform Validate
         id: validate
-        working-directory: infra
+        working-directory: ${{ inputs.working-directory }}
         run: terraform validate -no-color
       
       - name: Terraform apply 
         id: apply
-        working-directory: infra
+        working-directory: ${{ inputs.working-directory }}
         run: terraform apply -auto-approve -var-file env/${{ inputs.environment }}.tfvars
