@@ -43,17 +43,21 @@ jobs:
       
       - name: Terraform fmt
         id: fmt
+        working-directory: infra
         run: terraform fmt -check
         continue-on-error: true
       
       - name: Terraform Init
         id: init
+        working-directory: infra
         run: terraform init -backend-config=conf/${{ inputs.environment }}.conf
       
       - name: Terraform Validate
         id: validate
+        working-directory: infra
         run: terraform validate -no-color
       
       - name: Terraform apply 
         id: apply
+        working-directory: infra
         run: terraform apply -auto-approve -var-file env/${{ inputs.environment }}.tfvars
