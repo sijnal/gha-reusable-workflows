@@ -1,0 +1,148 @@
+name: Terraform plan
+
+on:
+  workflow_call:
+    inputs:
+      aws-role-arn:
+        required: true
+        type: string
+      aws-region:
+        required: false
+        type: string
+        default: us-east-1
+      environment:
+        required: true
+        type: string
+      lint-config-file:
+        required: false
+        type: string
+        default: .tflint.hcl
+      terraform-version:
+        required: false
+        type: string
+        default: 1.10.0
+      rules-to-skip-checkov:
+        description: 'Comma separated values of rules to skip'
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        id: creds
+        with:
+          role-to-assume: ${{ inputs.aws-role-arn }}
+          aws-region: ${{ inputs.aws-region }}
+          role-session-name: gha-tf-${{ github.actor }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ inputs.terraform-version }}
+      
+      - name: Terraform fmt
+        id: fmt
+        run: terraform fmt -check
+      
+      - name: Terraform Init
+        id: init
+        run: terraform init -backend-config=conf/${{ inputs.environment }}.conf
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - uses: terraform-linters/setup-tflint@v4
+        name: Setup TFLint
+        with:
+          tflint_version: v0.52.0
+  
+      - name: init tflint
+        shell: bash
+        run: tflint --init
+  
+      - name: run tflint
+        shell: bash
+        run: tflint --config=${{ inputs.lint-config-file }}
+
+      - name: Checkov GitHub Action
+        uses: bridgecrewio/checkov-action@99bb2caf247dfd9f03cf984373bc6043d4e32ebf #v12.1347.0
+        with:
+          framework: terraform
+          download_external_modules: true
+          directory: .
+          skip_check: ${{ inputs.rules-to-skip-checkov }}
+        env:
+          GITHUB_OVERRIDE_URL: true
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color -var-file env/${{ inputs.environment }}.tfvars
+      
+      - uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // 1. Retrieve existing bot comments for the PR
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            })
+            const botComment = comments.find(comment => {
+              return comment.user.type === 'Bot' && comment.body.includes('Terraform Format and Style')
+            })
+      
+            // 2. Prepare format of the comment
+            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+            <details><summary>Validation Output</summary>
+      
+            \`\`\`\n
+            ${{ steps.validate.outputs.stdout }}
+            \`\`\`
+      
+            </details>
+      
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+      
+            <details><summary>Show Plan</summary>
+      
+            \`\`\`\n
+            ${process.env.PLAN}
+            \`\`\`
+      
+            </details>
+      
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Workflow: \`${{ github.workflow }}\`*`;
+      
+            // 3. If we have a comment, update it, otherwise create a new one
+            if (botComment) {
+              github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: output
+              })
+            } else {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: output
+              })
+            }

@@ -1,0 +1,59 @@
+name: Terraform apply
+
+on:
+  workflow_call:
+    inputs:
+      aws-role-arn:
+        required: true
+        type: string
+      aws-region:
+        required: false
+        type: string
+        default: us-east-1
+      environment:
+        required: true
+        type: string
+        default: dev
+      terraform-version:
+        required: false
+        type: string
+        default: 1.10.0
+
+jobs:
+  apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        id: creds
+        with:
+          role-to-assume: ${{ inputs.aws-role-arn }}
+          aws-region: ${{ inputs.aws-region }}
+          role-session-name: gha-tf-${{ github.actor }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ inputs.terraform-version }}
+      
+      - name: Terraform fmt
+        id: fmt
+        run: terraform fmt -check
+        continue-on-error: true
+      
+      - name: Terraform Init
+        id: init
+        run: terraform init -backend-config=conf/${{ inputs.environment }}.conf
+      
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+      
+      - name: Terraform apply 
+        id: apply
+        run: terraform apply -auto-approve -var-file env/${{ inputs.environment }}.tfvars
