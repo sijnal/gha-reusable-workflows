@@ -24,7 +24,7 @@ on:
       terraform-version:
         required: false
         type: string
-        default: 1.10.0
+        default: 1.12.0
       rules-to-skip-checkov:
         description: 'Comma separated values of rules to skip'
         required: false
