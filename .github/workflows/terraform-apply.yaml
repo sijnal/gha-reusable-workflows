@@ -94,8 +94,4 @@ jobs:
               
       - name: Terraform apply 
         id: apply
-        env:
-          TF_VAR_ENVIRONMENT: ${{ vars.TF_VAR_ENVIRONMENT }}
-          TF_VAR_PROJECT_NAME: ${{ vars.TF_VAR_PROJECT_NAME }}
-          TF_VAR_RDS_PASSWORD: ${{ secrets.TF_VAR_RDS_PASSWORD }}
         run: terraform apply -auto-approve -var-file env/${{ inputs.environment }}.tfvars
