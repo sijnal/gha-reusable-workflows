@@ -1,4 +1,3 @@
-
 # Terraform Apply Workflow
 
 Este documento describe un workflow reutilizable de GitHub Actions para ejecutar `Terraform Apply`. Este pipeline está diseñado para trabajar con proyectos de Terraform y facilita la aplicación de cambios en la infraestructura gestionada con Terraform.
@@ -22,7 +21,8 @@ Este flujo realiza lo siguiente:
 
 | Input                | Requerido | Descripción                                                       | Valor por defecto  |
 |----------------------|-----------|-------------------------------------------------------------------|--------------------|
-| `aws-role-arn`       | ✅        | ARN del rol de AWS a asumir.                                      | —                  |
+| `account-id`         | ✅        | ID de la cuenta de AWS donde se encuentra el rol.                 | —                  |
+| `aws-role-name`      | ✅        | Nombre del rol de AWS a asumir (sin el prefijo ARN).             | —                  |
 | `aws-region`         | ❌        | Región de AWS donde ejecutar Terraform.                           | `us-east-1`        |
 | `environment`        | ✅        | Nombre del entorno (dev, staging, prod) usado para cargar config. | —                  |
 | `terraform-version`  | ❌        | Versión de Terraform a usar.                                      | `1.10.0`           |
@@ -51,7 +51,7 @@ Este workflow usa autenticación con AWS vía OIDC. No se requiere configuració
 2. Configura las credenciales de AWS.
 3. Instala la versión deseada de Terraform.
 4. Verifica el formato con `terraform fmt`.
-5. Inicializa con configuración específica del entorno (`conf/<env>.conf`).
+5. Inicializa con configuración específica del entorno (`backend/<env>.conf`).
 6. Valida la configuración.
 7. Aplica los cambios (`terraform apply`) con aprobación automática.
 
@@ -75,7 +75,8 @@ jobs:
   apply:
     uses: innvlat/tos-gha-reusable-workflows/.github/workflows/terraform-apply.yaml@main
     with:
-      aws-role-arn: arn:aws:iam::123456789012:role/my-gha-role
+      account-id: "123456789012"
+      aws-role-name: "my-gha-role"
       environment: dev
     secrets: inherit
 ```
@@ -88,7 +89,7 @@ jobs:
 
 Asegúrate de tener estos archivos en tu estructura:
 
-- `conf/<environment>.conf`
+- `backend/<environment>.conf`
 - `env/<environment>.tfvars`
 
 Usa este workflow para aplicar cambios únicamente luego de revisar y aprobar el `terraform plan`.

@@ -1,0 +1,169 @@
+name: Docker ECR ECS Deploy
+
+on:
+  workflow_call:
+    inputs:
+      account-id:
+        required: true
+        type: string
+      aws-role-name:
+        required: true
+        type: string
+      aws-region:
+        required: false
+        type: string
+        default: us-east-1
+      environment:
+        required: true
+        type: string
+      ecr-repository:
+        required: true
+        type: string
+      docker-context:
+        required: false
+        type: string
+        default: .
+      dockerfile-path:
+        required: false
+        type: string
+        default: Dockerfile
+      image-tag-prefix:
+        required: false
+        type: string
+        default: v
+      task-definition-path:
+        required: false
+        type: string
+        default: task-definition.json
+      ecs-service-name:
+        required: true
+        type: string
+      ecs-cluster-name:
+        required: true
+        type: string
+      container-name:
+        required: true
+        type: string
+      deploy-to-ecs:
+        required: false
+        type: boolean
+        default: false
+      create-git-tag:
+        required: false
+        type: boolean
+        default: true
+
+    outputs:
+      image-uri:
+        description: URI completa de la imagen construida
+        value: ${{ jobs.build-and-push.outputs.image-uri }}
+      image-tag:
+        description: Tag de la imagen construida
+        value: ${{ jobs.build-and-push.outputs.image-tag }}
+
+jobs:
+  build-and-push:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      image-uri: ${{ steps.generate-tags.outputs.image-uri }}
+      image-tag: ${{ steps.generate-tags.outputs.image-tag }}
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: docker/setup-buildx-action@v3
+
+    - uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::${{ inputs.account-id }}:role/${{ inputs.aws-role-name }}
+        aws-region: ${{ inputs.aws-region }}
+        role-session-name: gha-docker-${{ github.actor }}
+
+    - name: Login to ECR
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ inputs.account-id }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com
+
+    - name: Generate image tags
+      id: generate-tags
+      run: |
+        ECR_REGISTRY="${{ inputs.account-id }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com"
+        IMAGE_TAG="${{ inputs.image-tag-prefix }}${{ github.run_number }}"
+        FULL_REPO_NAME="${ECR_REGISTRY}/${{ inputs.ecr-repository }}"
+        IMAGE_URI="${FULL_REPO_NAME}:${IMAGE_TAG}"
+        
+        echo "image-tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+        echo "full-repo-name=${FULL_REPO_NAME}" >> $GITHUB_OUTPUT
+        echo "image-uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
+
+    - name: Build and Push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: ${{ inputs.docker-context }}
+        file: ${{ inputs.dockerfile-path }}
+        push: true
+        tags: ${{ steps.generate-tags.outputs.full-repo-name }}:${{ steps.generate-tags.outputs.image-tag }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  create-git-tag:
+    name: Create Git Tag
+    needs: build-and-push
+    if: ${{ inputs.create-git-tag }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Create and push Git tag
+      env:
+        TAG_NAME: "${{ needs.build-and-push.outputs.image-tag }}-${{ inputs.environment }}"
+        TAG_MESSAGE: "Versión ${{ needs.build-and-push.outputs.image-tag }} de ${{ inputs.environment }}"
+      run: |
+        git config user.name "${{ github.actor }}"
+        git config user.email "${{ github.actor }}@users.noreply.github.com"
+        git tag -a "${{ env.TAG_NAME }}" -m "${{ env.TAG_MESSAGE }}"
+        git push origin "${{ env.TAG_NAME }}"
+
+  deploy:
+    name: Deploy to ECS
+    needs: build-and-push
+    if: ${{ inputs.deploy-to-ecs }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      id-token: write
+      contents: read
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::${{ inputs.account-id }}:role/${{ inputs.aws-role-name }}
+        aws-region: ${{ inputs.aws-region }}
+        role-session-name: gha-ecs-${{ github.actor }}
+
+    - name: Render Amazon ECS task definition
+      id: render-task-definition
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: ${{ inputs.task-definition-path }}
+        container-name: ${{ inputs.container-name }}
+        image: ${{ needs.build-and-push.outputs.image-uri }}
+
+    - name: Deploy to Amazon ECS service
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+      with:
+        task-definition: ${{ steps.render-task-definition.outputs.task-definition }}
+        service: ${{ inputs.ecs-service-name }}
+        cluster: ${{ inputs.ecs-cluster-name }}
+        wait-for-service-stability: true

@@ -3,7 +3,10 @@ name: Terraform apply
 on:
   workflow_call:
     inputs:
-      aws-role-arn:
+      account-id:
+        required: true
+        type: string
+      aws-role-name:
         required: true
         type: string
       aws-region:
@@ -13,15 +16,10 @@ on:
       environment:
         required: true
         type: string
-        default: dev
-      working-directory:
-        required: false
-        type: string
-        default: infra
       terraform-version:
         required: false
         type: string
-        default: 1.12.0
+        default: 1.10.0
 
 jobs:
   apply:
@@ -37,7 +35,7 @@ jobs:
       - uses: aws-actions/configure-aws-credentials@v4
         id: creds
         with:
-          role-to-assume: ${{ inputs.aws-role-arn }}
+          role-to-assume: arn:aws:iam::${{ inputs.account-id }}:role/${{ inputs.aws-role-name }}
           aws-region: ${{ inputs.aws-region }}
           role-session-name: gha-tf-${{ github.actor }}
 
@@ -47,21 +45,16 @@ jobs:
       
       - name: Terraform fmt
         id: fmt
-        working-directory: ${{ inputs.working-directory }}
         run: terraform fmt -check
-        continue-on-error: true
       
       - name: Terraform Init
         id: init
-        working-directory: ${{ inputs.working-directory }}
-        run: terraform init -backend-config=conf/${{ inputs.environment }}.conf
+        run: terraform init -backend-config=backend/${{ inputs.environment }}.conf
       
       - name: Terraform Validate
         id: validate
-        working-directory: ${{ inputs.working-directory }}
         run: terraform validate -no-color
       
       - name: Terraform apply 
         id: apply
-        working-directory: ${{ inputs.working-directory }}
         run: terraform apply -auto-approve -var-file env/${{ inputs.environment }}.tfvars

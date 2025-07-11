@@ -1,4 +1,3 @@
-
 # Terraform Plan - GitHub Workflow
 
 Este documento describe un workflow reutilizable de GitHub Actions para ejecutar `Terraform Plan`. Este pipeline está diseñado para trabajar con proyectos de Terraform y facilita la validación, formateo, y planificación de cambios en la infraestructura gestionada con Terraform.
@@ -28,7 +27,8 @@ El workflow acepta las siguientes entradas mediante `workflow_call`:
 
 | Nombre                  | Requerido | Tipo   | Valor por defecto | Descripción                                                                 |
 |-------------------------|-----------|--------|--------------------|-----------------------------------------------------------------------------|
-| `aws-role-arn`          | ✅        | string | —                  | ARN del rol de AWS a asumir mediante OIDC.                                 |
+| `account-id`            | ✅        | string | —                  | ID de la cuenta de AWS donde se encuentra el rol.                          |
+| `aws-role-name`         | ✅        | string | —                  | Nombre del rol de AWS a asumir (sin el prefijo ARN).                       |
 | `aws-region`            | ❌        | string | `us-east-1`        | Región de AWS donde se ejecutarán los comandos.                            |
 | `environment`           | ✅        | string | —                  | Entorno para seleccionar la configuración (`.conf` y `.tfvars`).           |
 | `lint-config-file`      | ❌        | string | `.tflint.hcl`      | Ruta del archivo de configuración de TFLint.                               |
@@ -78,7 +78,8 @@ jobs:
   terraform-plan:
     uses: innvlat/tos-gha-reusable-workflows/.github/workflows/terraform-plan.yaml@main
     with:
-      aws-role-arn: arn:aws:iam::123456789012:role/gha-terraform-role
+      account-id: "123456789012"
+      aws-role-name: "gha-terraform-role"
       environment: dev
     secrets: inherit
 ```
@@ -90,7 +91,7 @@ jobs:
 ## ✅ Recomendaciones
 
 - Asegúrate de tener estos archivos en tu estructura:
-  - `conf/<environment>.conf`
+  - `backend/<environment>.conf`
   - `env/<environment>.tfvars`
 - Usa este workflow para prevenir errores antes de aplicar cambios a producción.
 - Se recomienda separar `terraform plan` y `terraform apply` en diferentes workflows para mantener control de cambios.

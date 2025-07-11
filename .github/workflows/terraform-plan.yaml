@@ -3,7 +3,10 @@ name: Terraform plan
 on:
   workflow_call:
     inputs:
-      aws-role-arn:
+      account-id:
+        required: true
+        type: string
+      aws-role-name:
         required: true
         type: string
       aws-region:
@@ -13,10 +16,6 @@ on:
       environment:
         required: true
         type: string
-      working-directory:
-        required: false
-        type: string
-        default: infra
       lint-config-file:
         required: false
         type: string
@@ -24,7 +23,7 @@ on:
       terraform-version:
         required: false
         type: string
-        default: 1.12.0
+        default: 1.10.0
       rules-to-skip-checkov:
         description: 'Comma separated values of rules to skip'
         required: false
@@ -46,7 +45,7 @@ jobs:
       - uses: aws-actions/configure-aws-credentials@v4
         id: creds
         with:
-          role-to-assume: ${{ inputs.aws-role-arn }}
+          role-to-assume: arn:aws:iam::${{ inputs.account-id }}:role/${{ inputs.aws-role-name }}
           aws-region: ${{ inputs.aws-region }}
           role-session-name: gha-tf-${{ github.actor }}
 
@@ -56,17 +55,14 @@ jobs:
       
       - name: Terraform fmt
         id: fmt
-        working-directory: ${{ inputs.working-directory }}
         run: terraform fmt -check
       
       - name: Terraform Init
         id: init
-        working-directory: ${{ inputs.working-directory }}
-        run: terraform init -backend-config=conf/${{ inputs.environment }}.conf
+        run: terraform init -backend-config=backend/${{ inputs.environment }}.conf
 
       - name: Terraform Validate
         id: validate
-        working-directory: ${{ inputs.working-directory }}
         run: terraform validate -no-color
 
       - uses: terraform-linters/setup-tflint@v4
@@ -76,12 +72,10 @@ jobs:
   
       - name: init tflint
         shell: bash
-        working-directory: ${{ inputs.working-directory }}
         run: tflint --init
   
       - name: run tflint
         shell: bash
-        working-directory: ${{ inputs.working-directory }}
         run: tflint --config=${{ inputs.lint-config-file }}
 
       - name: Checkov GitHub Action
@@ -96,7 +90,6 @@ jobs:
 
       - name: Terraform Plan
         id: plan
-        working-directory: ${{ inputs.working-directory }}
         run: terraform plan -no-color -var-file env/${{ inputs.environment }}.tfvars
       
       - uses: actions/github-script@v7
