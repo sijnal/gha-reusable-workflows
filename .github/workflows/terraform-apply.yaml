@@ -46,8 +46,6 @@ jobs:
           echo "=== Variables de GitHub ==="
           echo "GITHUB_VARS: ${{ toJSON(vars) }}"
           echo ""
-          echo "GITHUB_VARS: ${{ toJSON(envs) }}"
-          echo ""
           echo "=== Contenido del archivo tfvars ==="
           cat env/${{ inputs.environment }}.tfvars || echo "Archivo no encontrado"
 
