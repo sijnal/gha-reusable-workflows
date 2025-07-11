@@ -32,6 +32,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # PASO DE DEBUG - Verificar variables antes de AWS
+      - name: Debug - Verificar variables de entorno
+        run: |
+          echo "=== Variables de entorno disponibles ==="
+          echo "TF_VAR_ENVIRONMENT: ${{ vars.TF_VAR_ENVIRONMENT }}"
+          echo "TF_VAR_PROJECT_NAME: ${{ vars.TF_VAR_PROJECT_NAME }}"
+          echo "TF_VAR_RDS_PASSWORD está definido: ${{ secrets.TF_VAR_RDS_PASSWORD != '' }}"
+          echo ""
+          echo "=== Todas las variables de entorno ==="
+          env | grep TF_VAR || echo "No hay variables TF_VAR"
+          echo ""
+          echo "=== Variables de GitHub ==="
+          echo "GITHUB_VARS: ${{ toJSON(vars) }}"
+          echo ""
+          echo "=== Contenido del archivo tfvars ==="
+          cat env/${{ inputs.environment }}.tfvars || echo "Archivo no encontrado"
+
       - uses: aws-actions/configure-aws-credentials@v4
         id: creds
         with:
@@ -54,6 +71,17 @@ jobs:
       - name: Terraform Validate
         id: validate
         run: terraform validate -no-color
+
+        # PASO DE DEBUG - Verificar variables antes del apply
+      - name: Debug - Verificar variables antes de Terraform apply
+        run: |
+          echo "=== Variables que Terraform verá ==="
+          echo "TF_VAR_ENVIRONMENT: ${{ vars.TF_VAR_ENVIRONMENT }}"
+          echo "TF_VAR_PROJECT_NAME: ${{ vars.TF_VAR_PROJECT_NAME }}"
+          echo "TF_VAR_RDS_PASSWORD está definido: ${{ secrets.TF_VAR_RDS_PASSWORD != '' }}"
+          echo ""
+          echo "=== Plan de Terraform para verificar variables ==="
+          terraform plan -var-file env/${{ inputs.environment }}.tfvars -detailed-exitcode || echo "Plan completado"
       
       - name: Terraform apply 
         id: apply
