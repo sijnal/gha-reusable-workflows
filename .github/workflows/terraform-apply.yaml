@@ -46,6 +46,8 @@ jobs:
           echo "=== Variables de GitHub ==="
           echo "GITHUB_VARS: ${{ toJSON(vars) }}"
           echo ""
+          echo "GITHUB_VARS: ${{ toJSON(envs) }}"
+          echo ""
           echo "=== Contenido del archivo tfvars ==="
           cat env/${{ inputs.environment }}.tfvars || echo "Archivo no encontrado"
 
@@ -72,17 +74,24 @@ jobs:
         id: validate
         run: terraform validate -no-color
 
-        # PASO DE DEBUG - Verificar variables antes del apply
-      - name: Debug - Verificar variables antes de Terraform apply
+        # PASO CRÍTICO - Exportar variables de entorno
+      - name: Exportar variables de entorno
         run: |
-          echo "=== Variables que Terraform verá ==="
-          echo "TF_VAR_ENVIRONMENT: ${{ vars.TF_VAR_ENVIRONMENT }}"
-          echo "TF_VAR_PROJECT_NAME: ${{ vars.TF_VAR_PROJECT_NAME }}"
-          echo "TF_VAR_RDS_PASSWORD está definido: ${{ secrets.TF_VAR_RDS_PASSWORD != '' }}"
+          echo "TF_VAR_ENVIRONMENT=${{ vars.TF_VAR_ENVIRONMENT }}" >> $GITHUB_ENV
+          echo "TF_VAR_PROJECT_NAME=${{ vars.TF_VAR_PROJECT_NAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_RDS_PASSWORD=${{ secrets.TF_VAR_RDS_PASSWORD }}" >> $GITHUB_ENV
+          echo "Variables exportadas:"
+          env | grep TF_VAR
+      
+      # PASO DE DEBUG - Verificar variables después de exportar
+      - name: Debug - Verificar variables después de exportar
+        run: |
+          echo "=== Variables de entorno después de exportar ==="
+          env | grep TF_VAR
           echo ""
           echo "=== Plan de Terraform para verificar variables ==="
           terraform plan -var-file env/${{ inputs.environment }}.tfvars -detailed-exitcode || echo "Plan completado"
-      
+        
       - name: Terraform apply 
         id: apply
         env:
