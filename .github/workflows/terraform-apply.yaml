@@ -63,7 +63,8 @@ jobs:
           project_name  = "${{ vars.TF_VAR_PROJECT_NAME }}"
           rds_password  = "${{ secrets.TF_VAR_RDS_PASSWORD }}"
           EOF
-
+          echo "Contenido generado:"
+          cat override.auto.tfvars
       
       - name: Terraform apply 
         id: apply
