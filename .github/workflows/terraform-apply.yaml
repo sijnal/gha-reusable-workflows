@@ -83,15 +83,6 @@ jobs:
           echo "TF_VAR_PROJECT_NAME=${{ vars.TF_VAR_PROJECT_NAME }}"
           echo "TF_VAR_RDS_PASSWORD está definido: ${{ secrets.TF_VAR_RDS_PASSWORD != '' }}"
       
-      # PASO DE DEBUG - Verificar variables en el siguiente paso
-      - name: Debug - Verificar variables después de exportar
-        run: |
-          echo "=== Variables de entorno después de exportar ==="
-          env | grep TF_VAR || echo "No hay variables TF_VAR aún"
-          echo ""
-          echo "=== Plan de Terraform para verificar variables ==="
-          terraform plan -var-file env/${{ inputs.environment }}.tfvars -detailed-exitcode || echo "Plan completado"
-              
       - name: Terraform apply 
         id: apply
         run: terraform apply -auto-approve -var-file env/${{ inputs.environment }}.tfvars
