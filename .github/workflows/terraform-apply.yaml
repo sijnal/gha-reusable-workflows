@@ -28,6 +28,11 @@ on:
         required: false
         type: string
         default: 1.10.0
+      terraform-secrets:
+          description: 'Comma separated list of sensitive variables names (e.g., rds_password), debe existir el secreto RDS_PASSWORD_$ENVIRONMENT'
+          required: false
+          type: string
+          default: ''
 
 jobs:
   apply:
@@ -55,15 +60,37 @@ jobs:
         id: fmt
         run: terraform fmt -check
 
-      - uses: actions/download-artifact@v4
-        if: inputs.aditional-var-file-artifact != ''
-        with:
-          name: ${{ inputs.aditional-var-file-artifact }}
-          path: tmp/
+      - name: Generate Terraform Variables from Secrets
+        if: inputs.terraform-secrets != ''
+        run: |          
+          SECRETS_FILE="env/secrets-${{ inputs.environment }}.tfvars"
+          INPUT_SECRETS="${{ inputs.terraform-secrets }}"
+          
+          # Procesar lista separada por comas
+          IFS=',' read -ra SECRETS <<< "$INPUT_SECRETS"
+
+          for secret in "${SECRETS[@]}"; do
+            # Limpiar espacios en blanco
+            secret=$(echo "$secret" | xargs)
+            [[ -z "$secret" ]] && continue
+            
+            tf_var_name="$secret"
+            github_secret_name=$(echo "${secret}_${{ inputs.environment }}" | tr '[:lower:]' '[:upper:]')
+            
+            # Verificar si el secreto existe
+            if [[ -n "${!github_secret_name:-}" ]]; then
+              secret_value="${!github_secret_name}"
+              echo "$tf_var_name = \"$secret_value\"" >> $SECRETS_FILE
+            else
+              echo "⚠️ Warning: Secret $github_secret_name not found"
+            fi
+          done
 
       - name: Merge var files
-        if: inputs.aditional-var-file-artifact != ''
-        run: cat tmp/${{ inputs.aditional-var-file-name }} >> env/${{ inputs.environment }}.tfvars
+        if: inputs.terraform-secrets != ''
+        run: |
+          echo "" >> env/${{ inputs.environment }}.tfvars
+          cat env/secrets-${{ inputs.environment }}.tfvars >> env/${{ inputs.environment }}.tfvars
       
       - name: Terraform Init
         id: init
