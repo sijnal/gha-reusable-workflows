@@ -20,6 +20,10 @@ on:
         required: false
         type: string
         default: ''
+      aditional-var-file-name:
+        required: false
+        type: string
+        default: 'aditional.tfvars'
       terraform-version:
         required: false
         type: string
@@ -55,11 +59,11 @@ jobs:
         if: inputs.aditional-var-file-artifact != ''
         with:
           name: ${{ inputs.aditional-var-file-artifact }}
-          path: env/aditional.tfvars
+          path: tmp/
 
       - name: Merge var files
         if: inputs.aditional-var-file-artifact != ''
-        run: cat env/aditional.tfvars >> env/${{ inputs.environment }}.tfvars
+        run: cat tmp/${{ inputs.aditional-var-file-name }} >> env/${{ inputs.environment }}.tfvars
       
       - name: Terraform Init
         id: init
