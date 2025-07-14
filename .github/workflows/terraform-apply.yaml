@@ -16,23 +16,18 @@ on:
       environment:
         required: true
         type: string
-      aditional-var-file-artifact:
-        required: false
-        type: string
-        default: ''
-      aditional-var-file-name:
-        required: false
-        type: string
-        default: 'aditional.tfvars'
       terraform-version:
         required: false
         type: string
         default: 1.10.0
+      use-secrets:
+        required: false
+        type: boolean
+        default: false
+    secrets:
       terraform-secrets:
-          description: 'JSON object with terraform variables and their secret values from calling workflow'
-          required: false
-          type: string
-          default: ''
+        description: 'JSON object with terraform variables and their secret values from calling workflow'
+        required: false
 
 jobs:
   apply:
@@ -61,17 +56,15 @@ jobs:
         run: terraform fmt -check
 
       - name: Generate Terraform Variables from Secrets
-        if: inputs.terraform-secrets != ''
+        if: inputs.use-secrets == true
         run: |
           SECRETS_FILE="env/secrets-${{ inputs.environment }}.tfvars"
+          SECRETS_JSON='${{ secrets.terraform-secrets }}'
+          
           echo "" > $SECRETS_FILE
-          
-          # Procesar JSON de secretos
-          SECRETS_JSON='${{ inputs.terraform-secrets }}'
-          
-          # Verificar si es JSON válido
+
           if ! echo "$SECRETS_JSON" | jq . >/dev/null 2>&1; then
-            echo "❌ Error: terraform-secrets input is not valid JSON"
+            echo "❌ Error: terraform-secrets is not valid JSON"
             exit 1
           fi
           
@@ -79,17 +72,14 @@ jobs:
           echo "$SECRETS_JSON" | jq -r 'to_entries[] | "\(.key)=\(.value)"' | while IFS='=' read -r tf_var_name secret_value; do
             if [[ -n "$secret_value" && "$secret_value" != "null" ]]; then
               echo "$tf_var_name = \"$secret_value\"" >> $SECRETS_FILE
-              echo "✅ Added: $tf_var_name"
             else
               echo "⚠️ Warning: $tf_var_name has empty or null value"
             fi
           done
 
       - name: Merge var files
-        if: inputs.terraform-secrets != ''
-        run: |
-          echo "" >> env/${{ inputs.environment }}.tfvars
-          cat env/secrets-${{ inputs.environment }}.tfvars >> env/${{ inputs.environment }}.tfvars
+        if: inputs.use-secrets == true
+        run: cat env/secrets-${{ inputs.environment }}.tfvars >> env/${{ inputs.environment }}.tfvars
       
       - name: Terraform Init
         id: init
