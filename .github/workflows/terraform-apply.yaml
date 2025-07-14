@@ -54,20 +54,7 @@ jobs:
       - name: Terraform Validate
         id: validate
         run: terraform validate -no-color
-
-      #- name: Generar override.auto.tfvars
-      #  run: |
-      #    echo "Generando override.auto.tfvars con secrets y vars..."
-      #    cat <<EOF > override.auto.tfvars
-      #    environment   = "${{ vars.TF_VAR_ENVIRONMENT }}"
-      #    project_name  = "${{ vars.TF_VAR_PROJECT_NAME }}"
-      #    rds_password  = "${{ secrets.TF_VAR_RDS_PASSWORD }}"
-      #    EOF
       
       - name: Terraform apply 
         id: apply
-        env:
-          TF_VAR_environment: ${{ vars.TF_VAR_ENVIRONMENT }}
-          TF_VAR_project_name: ${{ vars.TF_VAR_PROJECT_NAME }}
-          TF_VAR_rds_password: ${{ secrets.TF_VAR_RDS_PASSWORD }}
         run: terraform apply -auto-approve -var-file env/${{ inputs.environment }}.tfvars
