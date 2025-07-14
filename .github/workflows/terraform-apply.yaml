@@ -16,7 +16,7 @@ on:
       environment:
         required: true
         type: string
-      aditional-var-file:
+      aditional-var-file-artifact:
         required: false
         type: string
         default: ''
@@ -52,14 +52,14 @@ jobs:
         run: terraform fmt -check
 
       - uses: actions/download-artifact@v4
-        if: inputs.aditional-var-file != ''
+        if: inputs.aditional-var-file-artifact != ''
         with:
-          name: ${{ inputs.aditional-var-file }}
-          path: env/${{ inputs.environment }}-aditional.tfvars
+          name: ${{ inputs.aditional-var-file-artifact }}
+          path: env/aditional.tfvars
 
       - name: Merge var files
-        if: inputs.aditional-var-file != ''
-        run: cat env/${{ inputs.aditional-var-file }}-aditional.tfvars >> env/${{ inputs.environment }}.tfvars
+        if: inputs.aditional-var-file-artifact != ''
+        run: cat env/aditional.tfvars >> env/${{ inputs.environment }}.tfvars
       
       - name: Terraform Init
         id: init
