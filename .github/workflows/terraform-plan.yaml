@@ -30,7 +30,7 @@ on:
         type: string
         default: ''
       terraform-secrets:
-        description: 'Comma separated list of secret names without TF_VAR_ prefix (e.g., RDS_PASSWORD,RDS_USER) or JSON object'
+        description: 'JSON object with terraform variables and their secret values from calling workflow'
         required: false
         type: string
         default: ''
@@ -64,27 +64,26 @@ jobs:
 
       - name: Generate Terraform Variables from Secrets
         if: inputs.terraform-secrets != ''
-        run: |          
+        run: |
           SECRETS_FILE="env/secrets-${{ inputs.environment }}.tfvars"
-          INPUT_SECRETS="${{ inputs.terraform-secrets }}"
+          echo "" > $SECRETS_FILE
           
-          # Procesar lista separada por comas
-          IFS=',' read -ra SECRETS <<< "$INPUT_SECRETS"
-
-          for secret in "${SECRETS[@]}"; do
-            # Limpiar espacios en blanco
-            secret=$(echo "$secret" | xargs)
-            [[ -z "$secret" ]] && continue
-            
-            tf_var_name="$secret"
-            github_secret_name=$(echo "${secret}_${{ inputs.environment }}" | tr '[:lower:]' '[:upper:]')
-            
-            # Verificar si el secreto existe
-            if [[ -n "${!github_secret_name:-}" ]]; then
-              secret_value="${!github_secret_name}"
+          # Procesar JSON de secretos
+          SECRETS_JSON='${{ inputs.terraform-secrets }}'
+          
+          # Verificar si es JSON válido
+          if ! echo "$SECRETS_JSON" | jq . >/dev/null 2>&1; then
+            echo "❌ Error: terraform-secrets input is not valid JSON"
+            exit 1
+          fi
+          
+          # Extraer cada par clave-valor del JSON
+          echo "$SECRETS_JSON" | jq -r 'to_entries[] | "\(.key)=\(.value)"' | while IFS='=' read -r tf_var_name secret_value; do
+            if [[ -n "$secret_value" && "$secret_value" != "null" ]]; then
               echo "$tf_var_name = \"$secret_value\"" >> $SECRETS_FILE
+              echo "✅ Added: $tf_var_name"
             else
-              echo "⚠️ Warning: Secret $github_secret_name not found"
+              echo "⚠️ Warning: $tf_var_name has empty or null value"
             fi
           done
 

@@ -65,7 +65,7 @@ jobs:
         run: |          
           SECRETS_FILE="env/secrets-${{ inputs.environment }}.tfvars"
           INPUT_SECRETS="${{ inputs.terraform-secrets }}"
-          
+          touch $SECRETS_FILE
           # Procesar lista separada por comas
           IFS=',' read -ra SECRETS <<< "$INPUT_SECRETS"
 
