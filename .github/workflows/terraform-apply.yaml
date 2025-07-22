@@ -38,6 +38,11 @@ jobs:
       id-token: write
       contents: read
     steps:
+
+      - name: Setup Git access to private modules
+        run: |
+          git config --global url."https://${{ secrets.GH_READONLY_TOKEN }}@github.com/".insteadOf "https://github.com/"
+        
       - uses: actions/checkout@v4
 
       - uses: aws-actions/configure-aws-credentials@v4
