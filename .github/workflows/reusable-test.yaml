@@ -1,0 +1,30 @@
+# Reusable workflow
+name: Reusable - Test Environments
+
+on:
+  workflow_call:
+    inputs:
+      mensaje:
+        required: true
+        type: string
+    secrets:
+      MY_SECRET:
+        required: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mostrar mensaje recibido
+        run: echo "Mensaje recibido: ${{ inputs.mensaje }}"
+
+      - name: Mostrar variables del environment
+        run: |
+          echo "ENV: ${{ vars.ENV }}"
+          echo "ENVIROMENT: ${{ vars.ENVIROMENT }}"
+
+      - name: Mostrar secret del environment (si existe)
+        run: |
+          echo "Valor del secret MY_SECRET (oculto)"
+        env:
+          SECRET: ${{ secrets.MY_SECRET }}
