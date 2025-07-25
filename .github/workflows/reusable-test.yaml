@@ -24,6 +24,13 @@ jobs:
           echo "ENV: ${{ vars.ENV }}"
           echo "ENVIROMENT: ${{ vars.ENVIROMENT }}"
 
-      - name: Usar el secret
+      - name: Validar valor del secret
         run: |
-          echo "Secret: ${{ secrets.MY_SECRET }}"
+          if [ "${{ secrets.MY_SECRET }}" = "123" ]; then
+            echo "✅ Estamos en producción"
+          elif [ "${{ secrets.MY_SECRET }}" = "123456" ]; then
+            echo "✅ Estamos en development"
+          else
+            echo "⚠️ Valor de secret desconocido: ${{ secrets.MY_SECRET }}"
+          fi
+
