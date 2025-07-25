@@ -7,9 +7,6 @@ on:
       mensaje:
         required: true
         type: string
-    secrets:
-      MY_SECRET:
-        required: false
 
 jobs:
   test:
@@ -22,9 +19,7 @@ jobs:
         run: |
           echo "ENV: ${{ vars.ENV }}"
           echo "ENVIROMENT: ${{ vars.ENVIROMENT }}"
-
-      - name: Mostrar secret del environment (si existe)
-        run: |
-          echo "Valor del secret MY_SECRET (oculto)"
-        env:
-          SECRET: ${{ secrets.MY_SECRET }}
+          
+    steps:
+      - name: Usar el secret
+      run: echo "Secret: ${{ secrets.MY_SECRET }}"
