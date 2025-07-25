@@ -21,14 +21,14 @@ jobs:
 
       - name: Mostrar variables del environment
         run: |
-          echo "ENV: ${{ vars.ENV }}"
-          echo "ENVIROMENT: ${{ vars.ENVIROMENT }}"
+          echo "ENV: ${{ vars.env }}"
+          echo "ENVIROMENT: ${{ vars.environment }}"
 
       - name: Validar valor del secret
         run: |
           if [ "${{ secrets.MY_SECRET }}" = "123" ]; then
             echo "✅ Estamos en producción"
-          elif [ "${{ secrets.MY_SECRET }}" = "123456" ]; then
+          elif [ "${{ secrets.my_secret }}" = "123456" ]; then
             echo "✅ Estamos en development"
           else
             echo "⚠️ Valor de secret desconocido: ${{ secrets.MY_SECRET }}"
