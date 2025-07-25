@@ -8,7 +8,7 @@ on:
         type: string
 
 jobs:
-  test:a:
+  test:
     runs-on: ubuntu-latest
     steps:
       - name: Mostrar mensaje recibido
