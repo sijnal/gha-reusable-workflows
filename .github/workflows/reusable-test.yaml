@@ -4,15 +4,17 @@ on:
   workflow_call:
     inputs:
       mensaje:
-        required: true
+        required: false
         type: string
+        
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - name: Mostrar mensaje recibido
-        run: echo "Mensaje recibido: ${{ inputs.mensaje }}"
+        run: |
+          echo "Mensaje recibido: ${{ inputs.mensaje }}"
 
       - name: Mostrar variables del environment
         run: |
@@ -20,4 +22,5 @@ jobs:
           echo "ENVIROMENT: ${{ vars.ENVIROMENT }}"
 
       - name: Usar el secret
-        run: echo "Secret: ${{ secrets.MY_SECRET }}"
+        run: |
+          echo "Secret: ${{ secrets.MY_SECRET }}"
