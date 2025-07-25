@@ -1,4 +1,3 @@
-# Reusable workflow
 name: Reusable - Test Environments
 
 on:
@@ -9,7 +8,7 @@ on:
         type: string
 
 jobs:
-  test:
+  test:a:
     runs-on: ubuntu-latest
     steps:
       - name: Mostrar mensaje recibido
@@ -19,7 +18,6 @@ jobs:
         run: |
           echo "ENV: ${{ vars.ENV }}"
           echo "ENVIROMENT: ${{ vars.ENVIROMENT }}"
-          
-    steps:
+
       - name: Usar el secret
-      run: echo "Secret: ${{ secrets.MY_SECRET }}"
+        run: echo "Secret: ${{ secrets.MY_SECRET }}"
