@@ -45,8 +45,17 @@ jobs:
         with:
           repository: sijnal/poc-tf-modules
           ssh-key: ${{ secrets.DEPLOY_KEY }}
-          path:  module
+          path:  ./modules
           ref: s3-v4.0.0
+
+      - name: Debug - List directory structure
+        run: |
+          echo "=== Current directory ==="
+          pwd
+          echo "=== Directory contents ==="
+          ls -la
+          echo "=== Modules directory ==="
+          ls -la modules/
 
       - uses: aws-actions/configure-aws-credentials@v4
         id: creds
