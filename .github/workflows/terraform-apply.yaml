@@ -40,9 +40,12 @@ jobs:
     steps:
         
       - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
         with:
+          repository: sijnal/poc-tf-modules
           ssh-key: ${{ secrets.DEPLOY_KEY }}
-          persist-credentials: true
+          path:  modules
 
       - uses: aws-actions/configure-aws-credentials@v4
         id: creds
