@@ -39,14 +39,9 @@ jobs:
       contents: read
     steps:
 
-      - name: Configurar Deploy Key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          echo "Host github.com
-          IdentityFile ~/.ssh/deploy_key
-          StrictHostKeyChecking no" > ~/.ssh/config
+      - uses: webfactory/ssh-agent@a6f90b1f127823b31d4d4a8d96047790581349bd
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_KEY }}
         
       - uses: actions/checkout@v4
 
