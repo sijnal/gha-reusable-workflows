@@ -38,12 +38,11 @@ jobs:
       id-token: write
       contents: read
     steps:
-
-      - uses: webfactory/ssh-agent@a6f90b1f127823b31d4d4a8d96047790581349bd
-        with:
-          ssh-private-key: ${{ secrets.DEPLOY_KEY }}
         
       - uses: actions/checkout@v4
+        with:
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
+          persist-credentials: true
 
       - uses: aws-actions/configure-aws-credentials@v4
         id: creds
