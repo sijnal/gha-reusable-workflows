@@ -45,7 +45,7 @@ jobs:
         with:
           repository: sijnal/poc-tf-modules
           ssh-key: ${{ secrets.DEPLOY_KEY }}
-          path:  modules
+          path:  module
           ref: s3-v4.0.0
 
       - uses: aws-actions/configure-aws-credentials@v4
