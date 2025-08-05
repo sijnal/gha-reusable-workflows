@@ -39,9 +39,14 @@ jobs:
       contents: read
     steps:
 
-      - name: Setup Git access to private modules
+      - name: Configurar Deploy Key
         run: |
-          git config --global url."https://${{ secrets.GH_TERRAFORM_READONLY_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo "Host github.com
+          IdentityFile ~/.ssh/deploy_key
+          StrictHostKeyChecking no" > ~/.ssh/config
         
       - uses: actions/checkout@v4
 
