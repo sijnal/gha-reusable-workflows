@@ -22,7 +22,7 @@ jobs:
       - name: Mostrar variables del environment
         run: |
           echo "ENV: ${{ vars.env }}"
-          echo "ENVIROMENT: ${{ vars.environment }}"
+          echo "ENVIRONMENT: ${{ vars.environment }}"
 
       - name: Validar valor del secret
         run: |
