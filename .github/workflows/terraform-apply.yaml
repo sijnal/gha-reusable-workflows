@@ -27,7 +27,8 @@ on:
       required-modules:
         description: 'Lista de módulos separados por líneas (ej: s3/, rds/, ec2/)'
         required: false
-        type: string  
+        type: string
+        default: ""
       modules-ref:
         description: 'Tag o branch del repositorio de módulos'
         required: false
@@ -52,6 +53,7 @@ jobs:
 
       - name: Parse required-modules input
         id: parse_modules
+        if: ${{ inputs.required-modules != '' && inputs.required-modules != null }}
         run: |
           modules=$(echo "${{ inputs.required-modules }}" | sed 's/ //g' | tr ',' '\n')
           echo "modules<<EOF" >> $GITHUB_OUTPUT
@@ -59,6 +61,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - uses: actions/checkout@v4
+        if: steps.parse_modules.outcome == 'success'
         with:
           repository: sijnal/poc-tf-modules
           ssh-key: ${{ secrets.DEPLOY_KEY }}
