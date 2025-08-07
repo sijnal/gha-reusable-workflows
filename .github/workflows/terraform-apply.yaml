@@ -55,7 +55,7 @@ jobs:
         with:
           repository: sijnal/poc-tf-modules
           ssh-key: ${{ secrets.DEPLOY_KEY }}
-          path:  ./module
+          path:  ./modulea
           ref: ${{ inputs.modules-ref }}
           sparse-checkout: ${{ inputs.required-modules }}
           sparse-checkout-cone-mode: false
