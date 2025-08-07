@@ -53,9 +53,8 @@ jobs:
 
       - name: Parse required-modules input
         run: |
-          echo "${{ inputs.required-modules }}" | tr ',' '\n' > modules.txt
-          cat modules.txt
-
+          modules=$(echo "${{ inputs.required-modules }}" | tr ',' '\n')
+          echo "modules=$modules" >> $GITHUB_OUTPUT
 
       - uses: actions/checkout@v4
         with:
@@ -64,7 +63,7 @@ jobs:
           path:  ./modules
           ref: ${{ inputs.modules-ref }}
           sparse-checkout: |
-            $(cat modules.txt)
+            ${{ steps.parse_modules.outputs.modules }}
           sparse-checkout-cone-mode: false
 
       - name: Debug - List directory structure
