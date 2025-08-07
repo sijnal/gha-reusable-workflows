@@ -24,6 +24,16 @@ on:
         required: false
         type: boolean
         default: false
+      required-modules:
+        description: 'Lista de módulos separados por líneas (ej: s3/, rds/, ec2/)'
+        required: false
+        type: string  
+        default: ''
+      modules-ref:
+        description: 'Tag o branch del repositorio de módulos'
+        required: false
+        type: string
+        default: 'main'
     secrets:
       terraform-secrets:
         description: 'JSON object with terraform variables and their secret values from calling workflow'
@@ -46,7 +56,9 @@ jobs:
           repository: sijnal/poc-tf-modules
           ssh-key: ${{ secrets.DEPLOY_KEY }}
           path:  ./module
-          ref: s3-v4.0.0
+          ref: ${{ inputs.modules-ref }}
+          sparse-checkout: ${{ inputs.required-modules }}
+          sparse-checkout-cone-mode: false
 
       - name: Debug - List directory structure
         run: |
