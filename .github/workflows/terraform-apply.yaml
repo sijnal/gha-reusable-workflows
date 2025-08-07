@@ -28,7 +28,8 @@ on:
         description: 'Lista de módulos separados por líneas (ej: s3/, rds/, ec2/)'
         required: false
         type: string  
-        default: ''
+        default: |
+          README.md
       modules-ref:
         description: 'Tag o branch del repositorio de módulos'
         required: false
