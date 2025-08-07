@@ -54,6 +54,7 @@ jobs:
       - name: Parse required-modules input
         run: |
           echo "${{ inputs.required-modules }}" | tr ',' '\n' > modules.txt
+          cat modules.txt
 
 
       - uses: actions/checkout@v4
