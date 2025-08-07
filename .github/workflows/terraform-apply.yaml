@@ -52,6 +52,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Parse required-modules input
+        id: parse_modules
         run: |
           modules=$(echo "${{ inputs.required-modules }}" | tr ',' '\n')
           echo "modules<<EOF" >> $GITHUB_OUTPUT
