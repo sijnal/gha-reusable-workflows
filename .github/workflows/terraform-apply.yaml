@@ -54,7 +54,7 @@ jobs:
       - name: Parse required-modules input
         id: parse_modules
         run: |
-          modules=$(echo "${{ inputs.required-modules }}" | tr ',' '\n')
+          modules=$(echo "${{ inputs.required-modules }}" | sed 's/ //g' | tr ',' '\n')
           echo "modules<<EOF" >> $GITHUB_OUTPUT
           echo "$modules" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
