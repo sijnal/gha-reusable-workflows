@@ -51,13 +51,19 @@ jobs:
         
       - uses: actions/checkout@v4
 
+      - name: Parse required-modules input
+        run: |
+          echo "${{ inputs.required-modules }}" | tr ',' '\n' > modules.txt
+
+
       - uses: actions/checkout@v4
         with:
           repository: sijnal/poc-tf-modules
           ssh-key: ${{ secrets.DEPLOY_KEY }}
           path:  ./modules
           ref: ${{ inputs.modules-ref }}
-          sparse-checkout: ${{ inputs.required-modules }}
+          sparse-checkout: |
+            $(cat modules.txt)
           sparse-checkout-cone-mode: false
 
       - name: Debug - List directory structure
